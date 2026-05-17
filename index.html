@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VR-пространство</title>
+  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: #0a0a0f;
+      color: #e8e8f0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0d1b2a 0%, #1a0a2e 100%);
+      padding: 20px 16px 16px;
+      border-bottom: 1px solid #2a1a4a;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #c084fc;
+      letter-spacing: 0.5px;
+    }
+
+    header p {
+      font-size: 12px;
+      color: #7c7c9a;
+      margin-top: 3px;
+    }
+
+    .tag-badge {
+      display: inline-block;
+      background: rgba(192, 132, 252, 0.15);
+      border: 1px solid rgba(192, 132, 252, 0.3);
+      color: #c084fc;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-top: 6px;
+    }
+
+    #posts-container {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .post-card {
+      background: #13131f;
+      border: 1px solid #1e1e32;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.15s, border-color 0.15s;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      color: inherit;
+    }
+
+    .post-card:active {
+      transform: scale(0.98);
+      border-color: #c084fc;
+    }
+
+    .post-image {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      display: block;
+      background: #1e1e32;
+    }
+
+    .post-body {
+      padding: 12px;
+    }
+
+    .post-date {
+      font-size: 11px;
+      color: #5a5a7a;
+      margin-bottom: 6px;
+    }
+
+    .post-text {
+      font-size: 14px;
+      line-height: 1.5;
+      color: #c8c8e0;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .post-text .hashtag {
+      color: #c084fc;
+    }
+
+    .post-stats {
+      display: flex;
+      gap: 14px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #1e1e32;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #5a5a7a;
+    }
+
+    .stat svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      gap: 16px;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #1e1e32;
+      border-top-color: #c084fc;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loader p { font-size: 14px; color: #5a5a7a; }
+
+    .error-box {
+      margin: 20px 12px;
+      padding: 16px;
+      background: #1a0a0a;
+      border: 1px solid #4a1a1a;
+      border-radius: 12px;
+      font-size: 13px;
+      color: #f87171;
+      line-height: 1.5;
+    }
+
+    .empty-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      gap: 12px;
+      color: #5a5a7a;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .empty-box svg {
+      width: 48px;
+      height: 48px;
+      opacity: 0.4;
+    }
+
+    .load-more {
+      margin: 4px 12px 20px;
+      padding: 14px;
+      background: transparent;
+      border: 1px solid #2a1a4a;
+      border-radius: 12px;
+      color: #c084fc;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      width: calc(100% - 24px);
+      transition: background 0.15s;
+    }
+
+    .load-more:active { background: rgba(192, 132, 252, 0.1); }
+    .load-more:disabled { opacity: 0.4; cursor: default; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>VR-пространство</h1>
+  <p>Посты сообщества</p>
+  <span class="tag-badge">#vr</span>
+</header>
+
+<div id="app">
+  <div class="loader">
+    <div class="spinner"></div>
+    <p>Загружаем посты...</p>
+  </div>
+</div>
+
+<script>
+  const APP_ID = 54596759;
+  const GROUP_ID = 216486741;
+  const HASHTAG = '#vr';
+  const COUNT = 10;
+
+  let offset = 0;
+  let loading = false;
+  let allLoaded = false;
+  let token = null;
+
+  // Инициализация VK Bridge
+  vkBridge.send('VKWebAppInit');
+
+  // Получаем токен для доступа к API
+  async function getToken() {
+    try {
+      const data = await vkBridge.send('VKWebAppGetAuthToken', {
+        app_id: APP_ID,
+        scope: ''
+      });
+      return data.access_token;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function formatDate(unixTime) {
+    const d = new Date(unixTime * 1000);
+    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  function highlightHashtags(text) {
+    if (!text) return '';
+    return text.replace(/(#\w+)/g, '<span class="hashtag">$1</span>');
+  }
+
+  function getPostImage(post) {
+    if (!post.attachments) return null;
+    for (const att of post.attachments) {
+      if (att.type === 'photo') {
+        const sizes = att.photo.sizes;
+        const preferred = ['x', 'y', 'z', 'w', 'r', 'q', 'p'];
+        for (const s of preferred) {
+          const found = sizes.find(sz => sz.type === s);
+          if (found) return found.url;
+        }
+        return sizes[sizes.length - 1]?.url || null;
+      }
+    }
+    return null;
+  }
+
+  function renderPosts(posts) {
+    const container = document.getElementById('posts-container');
+    posts.forEach(post => {
+      const img = getPostImage(post);
+      const text = post.text || '';
+      const postUrl = `https://vk.com/wall-${GROUP_ID}_${post.id}`;
+
+      const card = document.createElement('a');
+      card.className = 'post-card';
+      card.href = postUrl;
+      card.target = '_blank';
+
+      // Открываем через VK Bridge если доступно
+      card.addEventListener('click', (e) => {
+        e.preventDefault();
+        vkBridge.send('VKWebAppOpenWallPost', {
+          owner_id: -GROUP_ID,
+          post_id: post.id
+        }).catch(() => {
+          window.open(postUrl, '_blank');
+        });
+      });
+
+      card.innerHTML = `
+        ${img ? `<img class="post-image" src="${img}" alt="" loading="lazy">` : ''}
+        <div class="post-body">
+          <div class="post-date">${formatDate(post.date)}</div>
+          ${text ? `<div class="post-text">${highlightHashtags(text.substring(0, 300))}${text.length > 300 ? '...' : ''}</div>` : ''}
+          <div class="post-stats">
+            <span class="stat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+              ${post.likes?.count || 0}
+            </span>
+            <span class="stat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              ${post.comments?.count || 0}
+            </span>
+            <span class="stat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+              </svg>
+              ${post.reposts?.count || 0}
+            </span>
+          </div>
+        </div>
+      `;
+
+      container.appendChild(card);
+    });
+  }
+
+  async function loadPosts() {
+    if (loading || allLoaded) return;
+    loading = true;
+
+    try {
+      if (!token) {
+        token = await getToken();
+      }
+
+      const params = new URLSearchParams({
+        owner_id: `-${GROUP_ID}`,
+        query: HASHTAG,
+        count: COUNT,
+        offset: offset,
+        v: '5.131',
+        access_token: token || ''
+      });
+
+      const res = await fetch(`https://api.vk.com/method/wall.search?${params}`);
+      const data = await res.json();
+
+      if (data.error) throw new Error(data.error.error_msg);
+
+      const posts = data.response?.items || [];
+      const total = data.response?.total_count || 0;
+
+      // Первая загрузка — рисуем контейнер
+      if (offset === 0) {
+        document.getElementById('app').innerHTML = posts.length === 0
+          ? `<div class="empty-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <p>Посты с хештегом ${HASHTAG} не найдены</p>
+            </div>`
+          : `<div id="posts-container"></div>`;
+      }
+
+      if (posts.length > 0) {
+        renderPosts(posts);
+        offset += posts.length;
+      }
+
+      allLoaded = offset >= total || posts.length < COUNT;
+
+      // Кнопка «Загрузить ещё»
+      const existing = document.getElementById('load-more-btn');
+      if (existing) existing.remove();
+
+      if (!allLoaded && posts.length > 0) {
+        const btn = document.createElement('button');
+        btn.id = 'load-more-btn';
+        btn.className = 'load-more';
+        btn.textContent = 'Загрузить ещё';
+        btn.onclick = loadPosts;
+        document.getElementById('app').appendChild(btn);
+      }
+
+    } catch (err) {
+      if (offset === 0) {
+        document.getElementById('app').innerHTML = `
+          <div class="error-box">
+            Не удалось загрузить посты.<br><br>
+            <strong>Причина:</strong> ${err.message}<br><br>
+            Убедись, что сообщество открытое и посты с хештегом ${HASHTAG} существуют.
+          </div>`;
+      }
+    }
+
+    loading = false;
+  }
+
+  loadPosts();
+</script>
+</body>
+</html>
