@@ -49,16 +49,16 @@
       border: 1px solid #c5e8ed;
       border-radius: 14px;
       overflow: hidden;
-      cursor: pointer;
       display: block;
       color: inherit;
+      text-decoration: none;
       box-shadow: 0 2px 8px rgba(47,154,170,0.08);
-      -webkit-tap-highlight-color: rgba(79,189,202,0.2);
+      -webkit-tap-highlight-color: rgba(79,189,202,0.15);
     }
 
-    .post-card:active { opacity: 0.85; }
+    .post-card:active { opacity: 0.8; }
 
-    .post-image { width: 100%; height: 180px; object-fit: cover; display: block; background: #d0eef2; }
+    .post-image { width: 100%; height: 180px; object-fit: cover; display: block; background: #d0eef2; pointer-events: none; }
     .post-body { padding: 12px; }
     .post-date { font-size: 11px; color: #4fbdca; font-weight: 600; margin-bottom: 6px; }
 
@@ -76,7 +76,7 @@
 
     .post-stats { display: flex; gap: 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #d8f0f3; }
     .stat { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #7ab8c0; }
-    .stat svg { width: 14px; height: 14px; }
+    .stat svg { width: 14px; height: 14px; pointer-events: none; }
 
     .loader { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 16px; }
     .spinner { width: 36px; height: 36px; border: 3px solid #c5e8ed; border-top-color: #4fbdca; border-radius: 50%; animation: spin 0.8s linear infinite; }
@@ -139,14 +139,6 @@
     return data.response;
   }
 
-  function openPost(postId) {
-    const url = `https://vk.com/wall-${GROUP_ID}_${postId}`;
-    // Пробуем все способы по очереди
-    vkBridge.send('VKWebAppOpenWallPost', { owner_id: -GROUP_ID, post_id: postId })
-      .catch(() => vkBridge.send('VKWebAppOpenLink', { link: url }))
-      .catch(() => { window.location.href = url; });
-  }
-
   function formatDate(ts) {
     return new Date(ts * 1000).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
   }
@@ -175,22 +167,12 @@
     posts.forEach(post => {
       const img = getPostImage(post);
       const text = post.text || '';
+      const postUrl = `https://vk.com/wall-${GROUP_ID}_${post.id}`;
 
-      const card = document.createElement('div');
+      const card = document.createElement('a');
       card.className = 'post-card';
-
-      // Используем touchend для мобила + click для десктопа
-      let touchMoved = false;
-      card.addEventListener('touchstart', () => { touchMoved = false; }, { passive: true });
-      card.addEventListener('touchmove', () => { touchMoved = true; }, { passive: true });
-      card.addEventListener('touchend', (e) => {
-        if (!touchMoved) {
-          e.preventDefault();
-          openPost(post.id);
-        }
-      });
-      card.addEventListener('click', () => openPost(post.id));
-
+      card.href = postUrl;
+      // Не используем target="_blank" — ВК сам решит как открыть
       card.innerHTML = `
         ${img ? `<img class="post-image" src="${img}" alt="" loading="lazy">` : ''}
         <div class="post-body">
