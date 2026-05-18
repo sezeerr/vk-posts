@@ -27,14 +27,7 @@
       box-shadow: 0 2px 12px rgba(47,154,170,0.25);
     }
 
-    header h1 {
-      font-size: 20px;
-      font-weight: 700;
-      color: #ffffff;
-      letter-spacing: 0.5px;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.15);
-    }
-
+    header h1 { font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: 0.5px; }
     header p { font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 3px; }
 
     .tag-badge {
@@ -49,12 +42,7 @@
       margin-top: 6px;
     }
 
-    #posts-container {
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+    #posts-container { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
 
     .post-card {
       background: #ffffff;
@@ -62,34 +50,17 @@
       border-radius: 14px;
       overflow: hidden;
       cursor: pointer;
-      text-decoration: none;
       display: block;
       color: inherit;
-      transition: box-shadow 0.15s, border-color 0.15s;
       box-shadow: 0 2px 8px rgba(47,154,170,0.08);
+      -webkit-tap-highlight-color: rgba(79,189,202,0.2);
     }
 
-    .post-card:active {
-      box-shadow: 0 4px 16px rgba(47,154,170,0.2);
-      border-color: #4fbdca;
-    }
+    .post-card:active { opacity: 0.85; }
 
-    .post-image {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-      display: block;
-      background: #d0eef2;
-    }
-
+    .post-image { width: 100%; height: 180px; object-fit: cover; display: block; background: #d0eef2; }
     .post-body { padding: 12px; }
-
-    .post-date {
-      font-size: 11px;
-      color: #4fbdca;
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
+    .post-date { font-size: 11px; color: #4fbdca; font-weight: 600; margin-bottom: 6px; }
 
     .post-text {
       font-size: 14px;
@@ -103,66 +74,17 @@
 
     .post-text .hashtag { color: #2a9aaa; font-weight: 600; }
 
-    .post-stats {
-      display: flex;
-      gap: 14px;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid #d8f0f3;
-    }
-
-    .stat {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 12px;
-      color: #7ab8c0;
-    }
-
+    .post-stats { display: flex; gap: 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #d8f0f3; }
+    .stat { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #7ab8c0; }
     .stat svg { width: 14px; height: 14px; }
 
-    .loader {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 60px 20px;
-      gap: 16px;
-    }
-
-    .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid #c5e8ed;
-      border-top-color: #4fbdca;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
+    .loader { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 16px; }
+    .spinner { width: 36px; height: 36px; border: 3px solid #c5e8ed; border-top-color: #4fbdca; border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-
     .loader p { font-size: 14px; color: #7ab8c0; }
 
-    .error-box {
-      margin: 20px 12px;
-      padding: 16px;
-      background: #fff0f0;
-      border: 1px solid #f5c0c0;
-      border-radius: 12px;
-      font-size: 13px;
-      color: #c0392b;
-      line-height: 1.6;
-    }
-
-    .empty-box {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 60px 20px;
-      color: #7ab8c0;
-      font-size: 14px;
-      text-align: center;
-    }
+    .error-box { margin: 20px 12px; padding: 16px; background: #fff0f0; border: 1px solid #f5c0c0; border-radius: 12px; font-size: 13px; color: #c0392b; line-height: 1.6; }
+    .empty-box { display: flex; align-items: center; justify-content: center; padding: 60px 20px; color: #7ab8c0; font-size: 14px; text-align: center; }
 
     .load-more {
       margin: 4px 12px 20px;
@@ -177,11 +99,9 @@
       cursor: pointer;
       width: calc(100% - 24px);
       box-shadow: 0 3px 10px rgba(47,154,170,0.3);
-      transition: opacity 0.15s;
     }
 
-    .load-more:active { opacity: 0.85; }
-    .load-more:disabled { opacity: 0.5; cursor: default; }
+    .load-more:disabled { opacity: 0.5; }
   </style>
 </head>
 <body>
@@ -219,6 +139,14 @@
     return data.response;
   }
 
+  function openPost(postId) {
+    const url = `https://vk.com/wall-${GROUP_ID}_${postId}`;
+    // Пробуем все способы по очереди
+    vkBridge.send('VKWebAppOpenWallPost', { owner_id: -GROUP_ID, post_id: postId })
+      .catch(() => vkBridge.send('VKWebAppOpenLink', { link: url }))
+      .catch(() => { window.location.href = url; });
+  }
+
   function formatDate(ts) {
     return new Date(ts * 1000).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
   }
@@ -247,14 +175,22 @@
     posts.forEach(post => {
       const img = getPostImage(post);
       const text = post.text || '';
-      const card = document.createElement('a');
+
+      const card = document.createElement('div');
       card.className = 'post-card';
-      card.href = '#';
-      card.addEventListener('click', e => {
-        e.preventDefault();
-        vkBridge.send('VKWebAppOpenWallPost', { owner_id: -GROUP_ID, post_id: post.id })
-          .catch(() => vkBridge.send('VKWebAppOpenLink', { link: `https://vk.com/wall-${GROUP_ID}_${post.id}` }));
+
+      // Используем touchend для мобила + click для десктопа
+      let touchMoved = false;
+      card.addEventListener('touchstart', () => { touchMoved = false; }, { passive: true });
+      card.addEventListener('touchmove', () => { touchMoved = true; }, { passive: true });
+      card.addEventListener('touchend', (e) => {
+        if (!touchMoved) {
+          e.preventDefault();
+          openPost(post.id);
+        }
       });
+      card.addEventListener('click', () => openPost(post.id));
+
       card.innerHTML = `
         ${img ? `<img class="post-image" src="${img}" alt="" loading="lazy">` : ''}
         <div class="post-body">
