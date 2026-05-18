@@ -53,6 +53,7 @@
       color: inherit;
       text-decoration: none;
       box-shadow: 0 2px 8px rgba(47,154,170,0.08);
+      cursor: pointer;
       -webkit-tap-highlight-color: rgba(79,189,202,0.15);
     }
 
@@ -75,8 +76,8 @@
     .post-text .hashtag { color: #2a9aaa; font-weight: 600; }
 
     .post-stats { display: flex; gap: 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #d8f0f3; }
-    .stat { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #7ab8c0; }
-    .stat svg { width: 14px; height: 14px; pointer-events: none; }
+    .stat { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #7ab8c0; pointer-events: none; }
+    .stat svg { width: 14px; height: 14px; }
 
     .loader { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 16px; }
     .spinner { width: 36px; height: 36px; border: 3px solid #c5e8ed; border-top-color: #4fbdca; border-radius: 50%; animation: spin 0.8s linear infinite; }
@@ -122,8 +123,21 @@
   const HASHTAG = '#vr';
   const COUNT = 10;
   let offset = 0, loading = false, allLoaded = false, userToken = null;
+  let platform = 'web'; // будет определена после инициализации
 
   vkBridge.send('VKWebAppInit');
+
+  // Определяем платформу через VK Bridge
+  vkBridge.send('VKWebAppGetLaunchParams').then(data => {
+    platform = data.vk_platform || 'web';
+    console.log('Platform:', platform);
+  }).catch(() => {
+    // Если не получилось — определяем по userAgent
+    const ua = navigator.userAgent.toLowerCase();
+    if (/android|iphone|ipad|mobile/.test(ua)) {
+      platform = 'mobile_android';
+    }
+  });
 
   async function getToken() {
     const data = await vkBridge.send('VKWebAppGetAuthToken', { app_id: APP_ID, scope: '' });
@@ -137,6 +151,20 @@
       params: { ...params, v: '5.131', access_token: userToken }
     });
     return data.response;
+  }
+
+  function openPost(postId) {
+    const url = `https://vk.com/wall-${GROUP_ID}_${postId}`;
+    const isMobile = /mobile|android|iphone|ipad/.test(platform);
+
+    if (isMobile) {
+      // На мобиле — открываем через VK Bridge (откроется внутри ВК)
+      vkBridge.send('VKWebAppOpenWallPost', { owner_id: -GROUP_ID, post_id: postId })
+        .catch(() => vkBridge.send('VKWebAppOpenLink', { link: url }));
+    } else {
+      // На ПК — открываем в новой вкладке браузера
+      window.open(url, '_blank');
+    }
   }
 
   function formatDate(ts) {
@@ -167,12 +195,11 @@
     posts.forEach(post => {
       const img = getPostImage(post);
       const text = post.text || '';
-      const postUrl = `https://vk.com/wall-${GROUP_ID}_${post.id}`;
 
-      const card = document.createElement('a');
+      const card = document.createElement('div');
       card.className = 'post-card';
-      card.href = postUrl;
-      // Не используем target="_blank" — ВК сам решит как открыть
+      card.addEventListener('click', () => openPost(post.id));
+
       card.innerHTML = `
         ${img ? `<img class="post-image" src="${img}" alt="" loading="lazy">` : ''}
         <div class="post-body">
