@@ -7,42 +7,195 @@
   <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Montserrat', sans-serif; background: #0a0a0f; color: #e8e8f0; min-height: 100vh; }
-    header { background: linear-gradient(135deg, #0d1b2a 0%, #1a0a2e 100%); padding: 20px 16px 16px; border-bottom: 1px solid #2a1a4a; position: sticky; top: 0; z-index: 10; }
-    header h1 { font-size: 20px; font-weight: 700; color: #c084fc; letter-spacing: 0.5px; }
-    header p { font-size: 12px; color: #7c7c9a; margin-top: 3px; }
-    .tag-badge { display: inline-block; background: rgba(192,132,252,0.15); border: 1px solid rgba(192,132,252,0.3); color: #c084fc; font-size: 11px; padding: 2px 8px; border-radius: 20px; margin-top: 6px; }
-    #posts-container { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
-    .post-card { background: #13131f; border: 1px solid #1e1e32; border-radius: 12px; overflow: hidden; cursor: pointer; text-decoration: none; display: block; color: inherit; transition: border-color 0.15s; }
-    .post-card:active { border-color: #c084fc; }
-    .post-image { width: 100%; height: 180px; object-fit: cover; display: block; background: #1e1e32; }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: #e8f6f7;
+      color: #1a3a3f;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #4fbdca 0%, #2a9aaa 100%);
+      padding: 20px 16px 16px;
+      border-bottom: 2px solid #2a9aaa;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 12px rgba(47,154,170,0.25);
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+
+    header p { font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 3px; }
+
+    .tag-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.25);
+      border: 1px solid rgba(255,255,255,0.5);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 20px;
+      margin-top: 6px;
+    }
+
+    #posts-container {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .post-card {
+      background: #ffffff;
+      border: 1px solid #c5e8ed;
+      border-radius: 14px;
+      overflow: hidden;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      color: inherit;
+      transition: box-shadow 0.15s, border-color 0.15s;
+      box-shadow: 0 2px 8px rgba(47,154,170,0.08);
+    }
+
+    .post-card:active {
+      box-shadow: 0 4px 16px rgba(47,154,170,0.2);
+      border-color: #4fbdca;
+    }
+
+    .post-image {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      display: block;
+      background: #d0eef2;
+    }
+
     .post-body { padding: 12px; }
-    .post-date { font-size: 11px; color: #5a5a7a; margin-bottom: 6px; }
-    .post-text { font-size: 14px; line-height: 1.5; color: #c8c8e0; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
-    .post-text .hashtag { color: #c084fc; }
-    .post-stats { display: flex; gap: 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #1e1e32; }
-    .stat { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #5a5a7a; }
+
+    .post-date {
+      font-size: 11px;
+      color: #4fbdca;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .post-text {
+      font-size: 14px;
+      line-height: 1.55;
+      color: #2a4a50;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .post-text .hashtag { color: #2a9aaa; font-weight: 600; }
+
+    .post-stats {
+      display: flex;
+      gap: 14px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #d8f0f3;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #7ab8c0;
+    }
+
     .stat svg { width: 14px; height: 14px; }
-    .loader { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 16px; }
-    .spinner { width: 36px; height: 36px; border: 3px solid #1e1e32; border-top-color: #c084fc; border-radius: 50%; animation: spin 0.8s linear infinite; }
+
+    .loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      gap: 16px;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #c5e8ed;
+      border-top-color: #4fbdca;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loader p { font-size: 14px; color: #5a5a7a; }
-    .error-box { margin: 20px 12px; padding: 16px; background: #1a0a0a; border: 1px solid #4a1a1a; border-radius: 12px; font-size: 13px; color: #f87171; line-height: 1.6; }
-    .empty-box { display: flex; align-items: center; justify-content: center; padding: 60px 20px; color: #5a5a7a; font-size: 14px; text-align: center; }
-    .load-more { margin: 4px 12px 20px; padding: 14px; background: transparent; border: 1px solid #2a1a4a; border-radius: 12px; color: #c084fc; font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; width: calc(100% - 24px); }
-    .load-more:disabled { opacity: 0.4; }
+
+    .loader p { font-size: 14px; color: #7ab8c0; }
+
+    .error-box {
+      margin: 20px 12px;
+      padding: 16px;
+      background: #fff0f0;
+      border: 1px solid #f5c0c0;
+      border-radius: 12px;
+      font-size: 13px;
+      color: #c0392b;
+      line-height: 1.6;
+    }
+
+    .empty-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      color: #7ab8c0;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .load-more {
+      margin: 4px 12px 20px;
+      padding: 14px;
+      background: linear-gradient(135deg, #4fbdca 0%, #2a9aaa 100%);
+      border: none;
+      border-radius: 12px;
+      color: #ffffff;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      width: calc(100% - 24px);
+      box-shadow: 0 3px 10px rgba(47,154,170,0.3);
+      transition: opacity 0.15s;
+    }
+
+    .load-more:active { opacity: 0.85; }
+    .load-more:disabled { opacity: 0.5; cursor: default; }
   </style>
 </head>
 <body>
+
 <header>
   <h1>VR-пространство</h1>
   <p>Посты сообщества</p>
   <span class="tag-badge">#vr</span>
 </header>
+
 <div id="app">
   <div class="loader"><div class="spinner"></div><p>Загружаем посты...</p></div>
 </div>
+
 <script>
   const APP_ID = 54596759;
   const GROUP_ID = 216486741;
