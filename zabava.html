@@ -1,1 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Клуб Забава</title>
+  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Montserrat', sans-serif; background: #fff8f2; color: #2a1a0a; min-height: 100vh; }
 
+    header {
+      background: linear-gradient(135deg, #ff8c42 0%, #ff6b1a 50%, #e8480a 100%);
+      padding: 20px 16px 16px;
+      border-bottom: 2px solid #e8480a;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 12px rgba(232,72,10,0.3);
+    }
+    header h1 { font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: 0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    header p { font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 3px; }
+    .tag-badge { display: inline-block; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); color: #ffffff; font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 20px; margin-top: 6px; }
+
+    #posts-container { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+
+    .post-card { background: #ffffff; border: 1px solid #ffd4b0; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(232,72,10,0.08); }
+    .post-image { width: 100%; height: 180px; object-fit: cover; display: block; background: #ffe8d0; }
+    .post-body { padding: 12px; }
+    .post-date { font-size: 11px; color: #ff6b1a; font-weight: 600; margin-bottom: 6px; }
+    .post-text { font-size: 14px; line-height: 1.55; color: #2a1a0a; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .post-text .hashtag { color: #e8480a; font-weight: 600; }
+    .post-stats { display: flex; gap: 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ffe8d0; }
+    .stat { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #c8886a; }
+    .stat svg { width: 14px; height: 14px; }
+
+    .open-btn { display: block; width: calc(100% - 24px); margin: 10px 12px 12px; padding: 11px; background: linear-gradient(135deg, #ff8c42 0%, #e8480a 100%); border: none; border-radius: 10px; color: #ffffff; font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; box-shadow: 0 3px 10px rgba(232,72,10,0.25); }
+    .open-btn:active { opacity: 0.8; }
+
+    .loader { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 16px; }
+    .spinner { width: 36px; height: 36px; border: 3px solid #ffd4b0; border-top-color: #ff6b1a; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader p { font-size: 14px; color: #c8886a; }
+
+    .error-box { margin: 20px 12px; padding: 16px; background: #fff0f0; border: 1px solid #f5c0c0; border-radius: 12px; font-size: 13px; color: #c0392b; line-height: 1.6; }
+    .empty-box { display: flex; align-items: center; justify-content: center; padding: 60px 20px; color: #c8886a; font-size: 14px; text-align: center; }
+
+    .load-more { margin: 4px 12px 20px; padding: 14px; background: linear-gradient(135deg, #ff8c42 0%, #e8480a 100%); border: none; border-radius: 12px; color: #ffffff; font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; width: calc(100% - 24px); box-shadow: 0 3px 10px rgba(232,72,10,0.25); }
+    .load-more:disabled { opacity: 0.5; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Клуб "Забава"</h1>
+  <p>Посты сообщества</p>
+  <span class="tag-badge">#СемейныйКлубЗабава</span>
+</header>
+<div id="app">
+  <div class="loader"><div class="spinner"></div><p>Загружаем посты...</p></div>
+</div>
+<script>
+  const APP_ID = 54599188;
+  const GROUP_ID = 216486741;
+  const HASHTAG = '#СемейныйКлубЗабава';
+  const COUNT = 10;
+  let offset = 0, loading = false, allLoaded = false, userToken = null;
+
+  vkBridge.send('VKWebAppInit');
+
+  async function getToken() {
+    const data = await vkBridge.send('VKWebAppGetAuthToken', { app_id: APP_ID, scope: '' });
+    return data.access_token;
+  }
+
+  async function callAPI(method, params) {
+    if (!userToken) userToken = await getToken();
+    const data = await vkBridge.send('VKWebAppCallAPIMethod', {
+      method, params: { ...params, v: '5.131', access_token: userToken }
+    });
+    return data.response;
+  }
+
+  function openPost(postId) {
+    const url = `https://vk.com/wall-${GROUP_ID}_${postId}`;
+    const ua = navigator.userAgent.toLowerCase();
+    const isMobile = /android|iphone|ipad/.test(ua);
+    if (isMobile) {
+      vkBridge.send('VKWebAppOpenWallPost', { owner_id: -GROUP_ID, post_id: postId })
+        .catch(() => vkBridge.send('VKWebAppOpenLink', { link: url }))
+        .catch(() => { window.location.href = url; });
+    } else {
+      window.open(url, '_blank');
+    }
+  }
+
+  function formatDate(ts) {
+    return new Date(ts * 1000).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  function highlightHashtags(text) {
+    return text.replace(/(#\w+)/g, '<span class="hashtag">$1</span>');
+  }
+
+  function getPostImage(post) {
+    if (!post.attachments) return null;
+    for (const att of post.attachments) {
+      if (att.type === 'photo') {
+        const sizes = att.photo.sizes;
+        for (const t of ['x','y','z','w','r','q','p']) {
+          const f = sizes.find(s => s.type === t);
+          if (f) return f.url;
+        }
+        return sizes[sizes.length-1]?.url || null;
+      }
+    }
+    return null;
+  }
+
+  function renderPosts(posts) {
+    const container = document.getElementById('posts-container');
+    posts.forEach(post => {
+      const img = getPostImage(post);
+      const text = post.text || '';
+      const card = document.createElement('div');
+      card.className = 'post-card';
+      card.innerHTML = `
+        ${img ? `<img class="post-image" src="${img}" alt="" loading="lazy">` : ''}
+        <div class="post-body">
+          <div class="post-date">${formatDate(post.date)}</div>
+          ${text ? `<div class="post-text">${highlightHashtags(text.substring(0,250))}${text.length>250?'...':''}</div>` : ''}
+          <div class="post-stats">
+            <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>${post.likes?.count||0}</span>
+            <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>${post.comments?.count||0}</span>
+            <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>${post.reposts?.count||0}</span>
+          </div>
+        </div>
+        <button class="open-btn">Открыть пост →</button>`;
+      card.querySelector('.open-btn').addEventListener('click', e => { e.stopPropagation(); openPost(post.id); });
+      container.appendChild(card);
+    });
+  }
+
+  async function loadPosts() {
+    if (loading || allLoaded) return;
+    loading = true;
+    const btn = document.getElementById('load-more-btn');
+    if (btn) btn.disabled = true;
+    try {
+      const response = await callAPI('wall.search', { owner_id: `-${GROUP_ID}`, query: HASHTAG, count: COUNT, offset });
+      const posts = response?.items || [];
+      const total = response?.total_count || 0;
+      if (offset === 0) {
+        document.getElementById('app').innerHTML = posts.length === 0
+          ? `<div class="empty-box">Посты с хештегом ${HASHTAG} не найдены</div>`
+          : `<div id="posts-container"></div>`;
+      }
+      if (posts.length > 0) { renderPosts(posts); offset += posts.length; }
+      allLoaded = offset >= total || posts.length < COUNT;
+      const existing = document.getElementById('load-more-btn');
+      if (existing) existing.remove();
+      if (!allLoaded) {
+        const newBtn = document.createElement('button');
+        newBtn.id = 'load-more-btn';
+        newBtn.className = 'load-more';
+        newBtn.textContent = 'Загрузить ещё';
+        newBtn.onclick = loadPosts;
+        document.getElementById('app').appendChild(newBtn);
+      }
+    } catch(err) {
+      if (offset === 0) {
+        document.getElementById('app').innerHTML = `<div class="error-box">Не удалось загрузить посты.<br><br><strong>Причина:</strong> ${err.message}</div>`;
+      } else {
+        const b = document.getElementById('load-more-btn');
+        if (b) { b.disabled = false; b.textContent = 'Попробовать снова'; }
+      }
+    }
+    loading = false;
+  }
+
+  loadPosts();
+</script>
+</body>
+</html>
