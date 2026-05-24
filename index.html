@@ -9,27 +9,13 @@
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Montserrat', sans-serif; background: #e8f6f7; color: #1a3a3f; min-height: 100vh; }
-
-    header {
-      background: linear-gradient(135deg, #4fbdca 0%, #2a9aaa 100%);
-      padding: 20px 16px 16px;
-      border-bottom: 2px solid #2a9aaa;
-      position: sticky; top: 0; z-index: 10;
-      box-shadow: 0 2px 12px rgba(47,154,170,0.25);
-    }
+    header { background: linear-gradient(135deg, #4fbdca 0%, #2a9aaa 100%); padding: 20px 16px 16px; border-bottom: 2px solid #2a9aaa; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 12px rgba(47,154,170,0.25); }
     header h1 { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
     header p { font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 3px; }
     .tag-badge { display: inline-block; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); color: #fff; font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 20px; margin-top: 6px; }
-
     #posts-container { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
-
-    .post-card {
-      background: #fff; border: 1px solid #c5e8ed; border-radius: 14px; overflow: hidden;
-      box-shadow: 0 2px 8px rgba(47,154,170,0.08); cursor: pointer;
-      transition: box-shadow 0.15s, border-color 0.15s;
-    }
-    .post-card:active { box-shadow: 0 4px 16px rgba(47,154,170,0.2); border-color: #4fbdca; opacity: 0.95; }
-
+    .post-card { background: #fff; border: 1px solid #c5e8ed; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(47,154,170,0.08); cursor: pointer; }
+    .post-card:active { opacity: 0.85; border-color: #4fbdca; }
     .post-image { width: 100%; height: 180px; object-fit: cover; display: block; background: #d0eef2; pointer-events: none; }
     .post-body { padding: 12px; }
     .post-date { font-size: 11px; color: #4fbdca; font-weight: 600; margin-bottom: 6px; }
@@ -38,15 +24,12 @@
     .post-stats { display: flex; gap: 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #d8f0f3; pointer-events: none; }
     .stat { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #7ab8c0; }
     .stat svg { width: 14px; height: 14px; }
-
     .loader { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 16px; }
     .spinner { width: 36px; height: 36px; border: 3px solid #c5e8ed; border-top-color: #4fbdca; border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .loader p { font-size: 14px; color: #7ab8c0; }
-
     .error-box { margin: 20px 12px; padding: 16px; background: #fff0f0; border: 1px solid #f5c0c0; border-radius: 12px; font-size: 13px; color: #c0392b; line-height: 1.6; }
     .empty-box { display: flex; align-items: center; justify-content: center; padding: 60px 20px; color: #7ab8c0; font-size: 14px; text-align: center; }
-
     .load-more { margin: 4px 12px 20px; padding: 14px; background: linear-gradient(135deg, #4fbdca 0%, #2a9aaa 100%); border: none; border-radius: 12px; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; width: calc(100% - 24px); box-shadow: 0 3px 10px rgba(47,154,170,0.3); }
     .load-more:disabled { opacity: 0.5; }
   </style>
@@ -83,14 +66,9 @@
   }
 
   function openPost(postId) {
-    const url = `https://vk.com/wall-${GROUP_ID}_${postId}`;
-    const ua = navigator.userAgent.toLowerCase();
-    if (/android|iphone|ipad/.test(ua)) {
-      vkBridge.send('VKWebAppOpenWallPost', { owner_id: -GROUP_ID, post_id: postId })
-        .catch(() => vkBridge.send('VKWebAppOpenLink', { link: url }));
-    } else {
-      window.open(url, '_blank');
-    }
+    vkBridge.send('VKWebAppOpenLink', {
+      link: `https://vk.com/wall-${GROUP_ID}_${postId}`
+    });
   }
 
   function formatDate(ts) {
