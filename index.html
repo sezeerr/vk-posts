@@ -14,8 +14,9 @@
     header p { font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 3px; }
     .tag-badge { display: inline-block; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); color: #fff; font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 20px; margin-top: 6px; }
     #posts-container { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
-    .post-card { background: #fff; border: 1px solid #c5e8ed; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(47,154,170,0.08); cursor: pointer; }
-    .post-card:active { opacity: 0.85; border-color: #4fbdca; }
+    .post-card { background: #fff; border: 1px solid #c5e8ed; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(47,154,170,0.08); cursor: pointer; transition: box-shadow 0.15s; }
+    .post-card:hover { box-shadow: 0 4px 16px rgba(47,154,170,0.2); border-color: #4fbdca; }
+    .post-card:active { opacity: 0.9; }
     .post-image { width: 100%; height: 180px; object-fit: cover; display: block; background: #d0eef2; pointer-events: none; }
     .post-body { padding: 12px; }
     .post-date { font-size: 11px; color: #4fbdca; font-weight: 600; margin-bottom: 6px; }
@@ -32,6 +33,52 @@
     .empty-box { display: flex; align-items: center; justify-content: center; padding: 60px 20px; color: #7ab8c0; font-size: 14px; text-align: center; }
     .load-more { margin: 4px 12px 20px; padding: 14px; background: linear-gradient(135deg, #4fbdca 0%, #2a9aaa 100%); border: none; border-radius: 12px; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; width: calc(100% - 24px); box-shadow: 0 3px 10px rgba(47,154,170,0.3); }
     .load-more:disabled { opacity: 0.5; }
+
+    /* Модальное окно для ПК */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 85vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .modal-close {
+      position: absolute; top: 12px; right: 12px;
+      width: 32px; height: 32px;
+      background: rgba(0,0,0,0.08);
+      border: none; border-radius: 50%;
+      font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: #555; z-index: 10;
+    }
+    .modal-close:hover { background: rgba(0,0,0,0.15); }
+    .modal-img { width: 100%; max-height: 300px; object-fit: cover; border-radius: 16px 16px 0 0; display: block; }
+    .modal-body { padding: 20px; }
+    .modal-date { font-size: 12px; color: #4fbdca; font-weight: 600; margin-bottom: 8px; }
+    .modal-text { font-size: 14px; line-height: 1.7; color: #2a4a50; white-space: pre-wrap; }
+    .modal-text .hashtag { color: #2a9aaa; font-weight: 600; }
+    .modal-link {
+      display: block; margin: 16px 0 0;
+      padding: 12px;
+      background: linear-gradient(135deg, #4fbdca 0%, #2a9aaa 100%);
+      border-radius: 10px; color: #fff;
+      text-align: center; text-decoration: none;
+      font-size: 13px; font-weight: 700;
+    }
+    .modal-link:hover { opacity: 0.9; }
   </style>
 </head>
 <body>
@@ -43,6 +90,15 @@
 <div id="app">
   <div class="loader"><div class="spinner"></div><p>Загружаем посты...</p></div>
 </div>
+
+<!-- Модальное окно -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal">
+    <button class="modal-close" id="modal-close">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
 <script>
   const APP_ID = 54596759;
   const GROUP_ID = 216486741;
@@ -51,6 +107,44 @@
   let offset = 0, loading = false, allLoaded = false, userToken = null;
 
   vkBridge.send('VKWebAppInit');
+
+  const isMobile = /android|iphone|ipad/i.test(navigator.userAgent);
+
+  // Модальное окно (только ПК)
+  const overlay = document.getElementById('modal-overlay');
+  const modalContent = document.getElementById('modal-content');
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+  function openModal(post) {
+    const img = getPostImage(post);
+    const text = post.text || '';
+    const postUrl = `https://vk.com/wall-${GROUP_ID}_${post.id}`;
+    modalContent.innerHTML = `
+      ${img ? `<img class="modal-img" src="${img}" alt="">` : ''}
+      <div class="modal-body">
+        <div class="modal-date">${formatDate(post.date)}</div>
+        <div class="modal-text">${highlightHashtags(text)}</div>
+        <a class="modal-link" href="${postUrl}" target="_blank">Открыть пост в ВКонтакте →</a>
+      </div>`;
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function openPost(post) {
+    if (isMobile) {
+      vkBridge.send('VKWebAppOpenLink', {
+        link: `https://vk.com/wall-${GROUP_ID}_${post.id}`
+      });
+    } else {
+      openModal(post);
+    }
+  }
 
   async function getToken() {
     const data = await vkBridge.send('VKWebAppGetAuthToken', { app_id: APP_ID, scope: '' });
@@ -63,12 +157,6 @@
       method, params: { ...params, v: '5.131', access_token: userToken }
     });
     return data.response;
-  }
-
-  function openPost(postId) {
-    vkBridge.send('VKWebAppOpenLink', {
-      link: `https://vk.com/wall-${GROUP_ID}_${postId}`
-    });
   }
 
   function formatDate(ts) {
@@ -112,7 +200,7 @@
             <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>${post.reposts?.count||0}</span>
           </div>
         </div>`;
-      card.addEventListener('click', () => openPost(post.id));
+      card.addEventListener('click', () => openPost(post));
       container.appendChild(card);
     });
   }
