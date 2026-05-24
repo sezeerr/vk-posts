@@ -32,8 +32,6 @@
     .empty-box { display: flex; align-items: center; justify-content: center; padding: 60px 20px; color: #7ab8c0; font-size: 14px; text-align: center; }
     .load-more { margin: 4px 12px 20px; padding: 14px; background: linear-gradient(135deg, #4fbdca 0%, #2a9aaa 100%); border: none; border-radius: 12px; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; width: calc(100% - 24px); box-shadow: 0 3px 10px rgba(47,154,170,0.3); }
     .load-more:disabled { opacity: 0.5; }
-
-    /* Модальное окно */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 1000; align-items: flex-end; justify-content: center; }
     .modal-overlay.active { display: flex; }
     .modal { background: #fff; border-radius: 20px 20px 0 0; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 -8px 40px rgba(0,0,0,0.2); animation: slideUp 0.25s ease; }
@@ -59,7 +57,6 @@
 <div id="app">
   <div class="loader"><div class="spinner"></div><p>Загружаем посты...</p></div>
 </div>
-
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal" id="modal">
     <div class="modal-handle"></div>
@@ -67,13 +64,13 @@
     <div id="modal-content"></div>
   </div>
 </div>
-
 <script>
   const APP_ID = 54596759;
   const GROUP_ID = 216486741;
   const HASHTAG = '#vr';
   const COUNT = 10;
   let offset = 0, loading = false, allLoaded = false, userToken = null;
+  const isMobile = /android|iphone|ipad/i.test(navigator.userAgent);
 
   vkBridge.send('VKWebAppInit');
 
@@ -90,12 +87,13 @@
       <div class="modal-body">
         <div class="modal-date">${formatDate(post.date)}</div>
         <div class="modal-text">${highlightHashtags(text)}</div>
-        <button class="modal-btn" id="goto-post">Открыть пост в ВКонтакте →</button>
+        ${!isMobile ? `<button class="modal-btn" id="goto-post">Открыть пост в ВКонтакте →</button>` : ''}
       </div>`;
-    document.getElementById('goto-post').addEventListener('click', () => {
-      vkBridge.send('VKWebAppOpenLink', { link: postUrl })
-        .catch(() => { window.open(postUrl, '_blank'); });
-    });
+    if (!isMobile) {
+      document.getElementById('goto-post').addEventListener('click', () => {
+        window.open(postUrl, '_blank');
+      });
+    }
     overlay.classList.add('active');
     document.body.style.overflow = 'hidden';
   }
