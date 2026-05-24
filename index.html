@@ -7,90 +7,37 @@
   <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: 'Montserrat', sans-serif;
-      background: #e8f6f7;
-      color: #1a3a3f;
-      min-height: 100vh;
-    }
+    body { font-family: 'Montserrat', sans-serif; background: #e8f6f7; color: #1a3a3f; min-height: 100vh; }
 
     header {
       background: linear-gradient(135deg, #4fbdca 0%, #2a9aaa 100%);
       padding: 20px 16px 16px;
       border-bottom: 2px solid #2a9aaa;
-      position: sticky;
-      top: 0;
-      z-index: 10;
+      position: sticky; top: 0; z-index: 10;
       box-shadow: 0 2px 12px rgba(47,154,170,0.25);
     }
-
-    header h1 { font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: 0.5px; }
+    header h1 { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
     header p { font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 3px; }
-
-    .tag-badge {
-      display: inline-block;
-      background: rgba(255,255,255,0.25);
-      border: 1px solid rgba(255,255,255,0.5);
-      color: #ffffff;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 10px;
-      border-radius: 20px;
-      margin-top: 6px;
-    }
+    .tag-badge { display: inline-block; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); color: #fff; font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 20px; margin-top: 6px; }
 
     #posts-container { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
 
     .post-card {
-      background: #ffffff;
-      border: 1px solid #c5e8ed;
-      border-radius: 14px;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(47,154,170,0.08);
+      background: #fff; border: 1px solid #c5e8ed; border-radius: 14px; overflow: hidden;
+      box-shadow: 0 2px 8px rgba(47,154,170,0.08); cursor: pointer;
+      transition: box-shadow 0.15s, border-color 0.15s;
     }
+    .post-card:active { box-shadow: 0 4px 16px rgba(47,154,170,0.2); border-color: #4fbdca; opacity: 0.95; }
 
-    .post-image { width: 100%; height: 180px; object-fit: cover; display: block; background: #d0eef2; }
+    .post-image { width: 100%; height: 180px; object-fit: cover; display: block; background: #d0eef2; pointer-events: none; }
     .post-body { padding: 12px; }
     .post-date { font-size: 11px; color: #4fbdca; font-weight: 600; margin-bottom: 6px; }
-
-    .post-text {
-      font-size: 14px;
-      line-height: 1.55;
-      color: #2a4a50;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
+    .post-text { font-size: 14px; line-height: 1.55; color: #2a4a50; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
     .post-text .hashtag { color: #2a9aaa; font-weight: 600; }
-
-    .post-stats { display: flex; gap: 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #d8f0f3; }
+    .post-stats { display: flex; gap: 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #d8f0f3; pointer-events: none; }
     .stat { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #7ab8c0; }
     .stat svg { width: 14px; height: 14px; }
-
-    .open-btn {
-      display: block;
-      width: calc(100% - 24px);
-      margin: 10px 12px 12px;
-      padding: 11px;
-      background: linear-gradient(135deg, #4fbdca 0%, #2a9aaa 100%);
-      border: none;
-      border-radius: 10px;
-      color: #ffffff;
-      font-family: 'Montserrat', sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      text-align: center;
-      letter-spacing: 0.3px;
-      -webkit-tap-highlight-color: rgba(0,0,0,0.1);
-    }
-
-    .open-btn:active { opacity: 0.8; }
 
     .loader { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 16px; }
     .spinner { width: 36px; height: 36px; border: 3px solid #c5e8ed; border-top-color: #4fbdca; border-radius: 50%; animation: spin 0.8s linear infinite; }
@@ -100,36 +47,19 @@
     .error-box { margin: 20px 12px; padding: 16px; background: #fff0f0; border: 1px solid #f5c0c0; border-radius: 12px; font-size: 13px; color: #c0392b; line-height: 1.6; }
     .empty-box { display: flex; align-items: center; justify-content: center; padding: 60px 20px; color: #7ab8c0; font-size: 14px; text-align: center; }
 
-    .load-more {
-      margin: 4px 12px 20px;
-      padding: 14px;
-      background: linear-gradient(135deg, #4fbdca 0%, #2a9aaa 100%);
-      border: none;
-      border-radius: 12px;
-      color: #ffffff;
-      font-family: 'Montserrat', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      width: calc(100% - 24px);
-      box-shadow: 0 3px 10px rgba(47,154,170,0.3);
-    }
-
+    .load-more { margin: 4px 12px 20px; padding: 14px; background: linear-gradient(135deg, #4fbdca 0%, #2a9aaa 100%); border: none; border-radius: 12px; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; width: calc(100% - 24px); box-shadow: 0 3px 10px rgba(47,154,170,0.3); }
     .load-more:disabled { opacity: 0.5; }
   </style>
 </head>
 <body>
-
 <header>
   <h1>VR-пространство</h1>
   <p>Посты сообщества</p>
   <span class="tag-badge">#vr</span>
 </header>
-
 <div id="app">
   <div class="loader"><div class="spinner"></div><p>Загружаем посты...</p></div>
 </div>
-
 <script>
   const APP_ID = 54596759;
   const GROUP_ID = 216486741;
@@ -147,8 +77,7 @@
   async function callAPI(method, params) {
     if (!userToken) userToken = await getToken();
     const data = await vkBridge.send('VKWebAppCallAPIMethod', {
-      method,
-      params: { ...params, v: '5.131', access_token: userToken }
+      method, params: { ...params, v: '5.131', access_token: userToken }
     });
     return data.response;
   }
@@ -156,12 +85,9 @@
   function openPost(postId) {
     const url = `https://vk.com/wall-${GROUP_ID}_${postId}`;
     const ua = navigator.userAgent.toLowerCase();
-    const isMobile = /android|iphone|ipad/.test(ua);
-
-    if (isMobile) {
+    if (/android|iphone|ipad/.test(ua)) {
       vkBridge.send('VKWebAppOpenWallPost', { owner_id: -GROUP_ID, post_id: postId })
-        .catch(() => vkBridge.send('VKWebAppOpenLink', { link: url }))
-        .catch(() => { window.location.href = url; });
+        .catch(() => vkBridge.send('VKWebAppOpenLink', { link: url }));
     } else {
       window.open(url, '_blank');
     }
@@ -195,30 +121,20 @@
     posts.forEach(post => {
       const img = getPostImage(post);
       const text = post.text || '';
-
       const card = document.createElement('div');
       card.className = 'post-card';
-
       card.innerHTML = `
-        ${img ? `<img class="post-image" src="${img}" alt="">` : ''}
+        ${img ? `<img class="post-image" src="${img}" alt="" loading="lazy">` : ''}
         <div class="post-body">
           <div class="post-date">${formatDate(post.date)}</div>
-          ${text ? `<div class="post-text">${highlightHashtags(text.substring(0,250))}${text.length>250?'...':''}</div>` : ''}
+          ${text ? `<div class="post-text">${highlightHashtags(text.substring(0,300))}${text.length>300?'...':''}</div>` : ''}
           <div class="post-stats">
             <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>${post.likes?.count||0}</span>
             <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>${post.comments?.count||0}</span>
             <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>${post.reposts?.count||0}</span>
           </div>
-        </div>
-        <button class="open-btn">Открыть пост →</button>
-      `;
-
-      // Вешаем на кнопку
-      card.querySelector('.open-btn').addEventListener('click', function(e) {
-        e.stopPropagation();
-        openPost(post.id);
-      });
-
+        </div>`;
+      card.addEventListener('click', () => openPost(post.id));
       container.appendChild(card);
     });
   }
@@ -229,9 +145,7 @@
     const btn = document.getElementById('load-more-btn');
     if (btn) btn.disabled = true;
     try {
-      const response = await callAPI('wall.search', {
-        owner_id: `-${GROUP_ID}`, query: HASHTAG, count: COUNT, offset
-      });
+      const response = await callAPI('wall.search', { owner_id: `-${GROUP_ID}`, query: HASHTAG, count: COUNT, offset });
       const posts = response?.items || [];
       const total = response?.total_count || 0;
       if (offset === 0) {
